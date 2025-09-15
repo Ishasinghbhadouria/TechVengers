@@ -2,11 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from functools import wraps
 from datetime import datetime
 
-# 1. Create Flask app
+# ----------------- APP SETUP -----------------
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this in production
 
-# 2. Global storage
+# ----------------- GLOBAL STORAGE -----------------
 users = {
     "admin": "admin123",
     "scheduler": "schedule2024"
@@ -14,7 +14,7 @@ users = {
 timetable_data = {}
 faculty_leaves = {}
 
-# 3. Login required decorator
+# ----------------- DECORATORS -----------------
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -25,7 +25,6 @@ def login_required(f):
     return decorated_function
 
 # ----------------- ROUTES -----------------
-
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -55,6 +54,7 @@ def logout():
 def dashboard():
     return render_template('dashboard.html', username=session['username'])
 
+# ----------------- TIMETABLE -----------------
 @app.route('/timetable', methods=['GET', 'POST'])
 @login_required
 def timetable():
@@ -139,6 +139,7 @@ def view_timetable():
 
     return render_template('view_timetable.html', timetable=timetable, days=days, max_classes=max_classes)
 
+# ----------------- ANALYTICS -----------------
 @app.route('/analytics')
 @login_required
 def analytics():
@@ -213,6 +214,7 @@ def analytics():
         utilization=utilization
     )
 
+# ----------------- LEAVE APPLY -----------------
 @app.route('/apply_leave', methods=['GET', 'POST'])
 @login_required
 def apply_leave():
@@ -234,17 +236,35 @@ def apply_leave():
             flash("Faculty and date required.", "danger")
 
     return render_template("apply_leave.html",
-                        faculties=faculties,
-                        faculty_leaves=faculty_leaves)
+                           faculties=faculties,
+                           faculty_leaves=faculty_leaves)
 
+# ----------------- APPROVALS -----------------
 @app.route('/approvals', methods=['GET', 'POST'])
 @login_required
 def approvals():
-    # For demo: fetch all applied leaves
-    if not faculty_leaves:
-        flash("No leave requests pending approval.", "info")
+    # ✅ Only admin can approve/deny
+    if session['username'] != 'admin':
+        flash("Access denied. Only admin can approve/deny leaves.", "danger")
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        faculty = request.form.get('faculty')
+        date = request.form.get('date')
+        action = request.form.get('action')
+
+        if faculty and date:
+            if action == 'approve':
+                flash(f"Leave for {faculty} on {date} has been APPROVED ✅", "success")
+            elif action == 'deny':
+                flash(f"Leave for {faculty} on {date} has been DENIED ❌", "danger")
+
+            if faculty in faculty_leaves and date in faculty_leaves[faculty]:
+                faculty_leaves[faculty].remove(date)
+
     return render_template("approvals.html", faculty_leaves=faculty_leaves)
 
 # ----------------- MAIN -----------------
 if __name__ == '__main__':
     app.run(debug=True)
+    
