@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard - Smart Scheduler</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <style>
+    /* CSS Variables for light/dark mode */
+    :root {
+        --color-bg-light: #f0f4f8;
+        --color-bg-dark: #1e293b;
+        --color-card-light: #ffffff;
+        --color-card-dark: #334155;
+        --color-text-light: #1e293b;
+        --color-text-dark: #f1f5f9;
+        --color-primary: #4a90e2;
+        --color-primary-dark: #3b7dd8;
+        --color-accent: #a3cef1;
+        --color-accent-dark: #7bb8e0;
+        --color-success: #34d399;
+        --color-warning: #fbbf24;
+        --color-danger: #f87171;
+    }
+
+    body {
+        background-color: var(--color-bg-light);
+        color: var(--color-text-light);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body.dark {
+        background-color: var(--color-bg-dark);
+        color: var(--color-text-dark);
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 1rem 2rem;
+    }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    header h1 {
+        font-weight: 700;
+        color: var(--color-primary);
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 26px;
+        display: inline-block;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: var(--color-accent);
+        border-radius: 34px;
+        transition: 0.4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: 0.4s;
+    }
+
+    input:checked + .slider {
+        background-color: var(--color-primary);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(24px);
+    }
+
+    /* Navigation Menu */
+    nav {
+        background-color: var(--color-card-light);
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        transition: background-color 0.3s ease;
+    }
+
+    body.dark nav {
+        background-color: var(--color-card-dark);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    nav a {
+        color: var(--color-primary);
+        font-weight: 600;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    nav a:hover {
+        background-color: var(--color-primary);
+        color: white;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+        gap: 1.5rem;
+    }
+
+    /* Cards */
+    .card {
+        background-color: var(--color-card-light);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    body.dark .card {
+        background-color: var(--color-card-dark);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .card h3 {
+        margin-top: 0;
+        color: var(--color-primary);
+        margin-bottom: 1rem;
+    }
+
+    .card .value {
+        font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--color-text-light);
+    }
+
+    body.dark .card .value {
+      color: var(--color-text-dark);
+    }
+
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      color: inherit;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark th, body.dark td {
+      border-color: #555;
+    }
+
+    th {
+      background-color: var(--color-accent);
+      color: var(--color-text-light);
+    }
+
+    body.dark th {
+      background-color: var(--color-accent-dark);
+      color: var(--color-text-dark);
+    }
+
+    /* Button */
+    .btn {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      align-self: flex-start;
+      margin-top: 1rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: var(--color-primary-dark);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      nav {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Smart Scheduler Dashboard</h1>
+      <label class="toggle-switch" title="Toggle Light/Dark Mode">
+        <input type="checkbox" id="mode-toggle" />
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <nav>
+      <a href="{{ url_for('timetable') }}">Create Timetable</a>
+      <a href="#">Approval Workflow</a>
+      <a href="#">Exports</a>
+      <a href="{{ url_for('logout') }}" style="margin-left:auto; color:#f87171;">Logout</a>
+    </nav>
+
+    <section class="dashboard-grid">
+      <!-- Faculty Workload Card -->
+      <div class="card">
+        <h3>Faculty Workload</h3>
+        <div class="value">45 Classes / Week</div>
+        <p>Average workload per faculty member.</p>
+        <a href="#" class="btn">View Details</a>
+      </div>
+
+      <!-- Courses of Semester Card -->
+      <div class="card">
+        <h3>Courses This Semester</h3>
+        <div class="value">12 Courses</div>
+        <p>Active courses across departments.</p>
+        <a href="#" class="btn">Manage Courses</a>
+      </div>
+
+        <!-- Latest Timetable Card -->
+        <div class="card">
+        <h3>Latest Timetable</h3>
+        <div class="value">Updated 2 days ago</div>
+        <p>View or export the latest generated timetable.</p>
+        <a href="{{ url_for('view_timetable') }}" class="btn">View Timetable</a>
+        </div>
+
+        <!-- Pending Approvals Card -->
+        <div class="card">
+        <h3>Pending Approvals</h3>
+        <div class="value" style="color: var(--color-warning);">3 Requests</div>
+        <p>Timetable changes awaiting approval.</p>
+        <a href="#" class="btn">Review Now</a>
+        </div>
+    </section>
+    </div>
+
+    <footer>
+    &copy; 2024 Smart Scheduler - Higher Education & School Timetable Management
+    </footer>
+
+    <script>
+    // Light/Dark mode toggle
+    const toggle = document.getElementById('mode-toggle');
+    const body = document.body;
+
+    // Load saved mode from localStorage
+    if(localStorage.getItem('mode') === 'dark') {
+        body.classList.add('dark');
+        toggle.checked = true;
+    }
+
+    toggle.addEventListener('change', () => {
+        if(toggle.checked) {
+        body.classList.add('dark');
+        localStorage.setItem('mode', 'dark');
+        } else {
+        body.classList.remove('dark');
+        localStorage.setItem('mode', 'light');
+        }
+    });
+    </script>
+</body>
+</html>
