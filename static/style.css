@@ -1,0 +1,117 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 700px;
+    margin: 3rem auto;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+h2, h3 {
+    color: #4a6fa5;
+}
+
+label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 600;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"] {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.3rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+button {
+    margin-top: 1.5rem;
+    background-color: #a3cef1;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    color: #1e3a8a;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #7bb8e0;
+}
+
+nav a {
+    color: #4a6fa5;
+    text-decoration: none;
+    font-weight: 600;
+    margin-right: 1rem;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+.subject-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.subject-row input {
+    flex: 1;
+}
+
+.subject-row button {
+    background-color: #f7a072;
+    color: #7a2e0e;
+    padding: 0 0.5rem;
+    font-weight: 600;
+}
+
+.subject-row button:hover {
+    background-color: #e07b4a;
+}
+
+.flashes {
+    list-style: none;
+    padding: 0;
+}
+
+.flash {
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+}
+
+.flash.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.flash.danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.flash.warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.flash.info {
+    background-color: #bfdbfe;
+    color: #1e40af;
+}
