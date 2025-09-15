@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>View Timetable - Smart Scheduler</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        th {
+            background-color: #d6e6f2;
+        }
+        td.empty {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Generated Timetable</h2>
+        {% for day in days %}
+            <h3>{{ day }}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Classroom / Slot</th>
+                        {% for slot in range(1, max_classes+1) %}
+                            <th>Slot {{ slot }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room, slots in timetable[day].items() %}
+                        <tr>
+                            <td><strong>{{ room }}</strong></td>
+                            {% for entry in slots %}
+                                {% if entry %}
+                                    <td>
+                                        <div><strong>{{ entry[1] }}</strong></div>
+                                        <div>Batch: {{ entry[0] }}</div>
+                                        <div>Faculty: {{ entry[2] }}</div>
+                                    </td>
+                                {% else %}
+                                    <td class="empty">-</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+        <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+    </div>
+</body>
+</html>
