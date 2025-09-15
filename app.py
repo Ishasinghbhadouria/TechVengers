@@ -1,16 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from functools import wraps
+from datetime import datetime
 
+# 1. Create Flask app
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Change this to a random secret key in production
+app.secret_key = 'your_secret_key_here'  # Change this in production
 
-# Dummy user store (username: password)
+# 2. Global storage
 users = {
-    'admin': 'admin123',
-    'scheduler': 'schedule2024'
+    "admin": "admin123",
+    "scheduler": "schedule2024"
 }
+timetable_data = {}
+faculty_leaves = {}
 
-# Decorator to require login
+# 3. Login required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -20,8 +24,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# In-memory storage for timetable data (for demo purposes)
-timetable_data = {}
+# ----------------- ROUTES -----------------
 
 @app.route('/')
 def home():
@@ -56,7 +59,6 @@ def dashboard():
 @login_required
 def timetable():
     if request.method == 'POST':
-        # Extract form data
         try:
             num_classrooms = int(request.form.get('num_classrooms'))
             num_batches = int(request.form.get('num_batches'))
@@ -65,12 +67,11 @@ def timetable():
             subjects = request.form.getlist('subjects[]')
             classes_per_week = request.form.getlist('classes_per_week[]')
             faculties = request.form.getlist('faculties[]')
-            # Basic validation
+
             if not (len(subjects) == len(classes_per_week) == len(faculties) == num_subjects):
                 flash("Mismatch in subjects and classes/faculties count.", "danger")
                 return redirect(url_for('timetable'))
 
-            # Store data in session or global dict for demo
             timetable_data[session['username']] = {
                 'num_classrooms': num_classrooms,
                 'num_batches': num_batches,
@@ -97,8 +98,6 @@ def view_timetable():
         flash("No timetable data found. Please input timetable details first.", "warning")
         return redirect(url_for('timetable'))
 
-    # Simplified timetable generation logic:
-    # Assign subjects to batches and classrooms in a round-robin fashion
     timetable = {}
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
     num_days = len(days)
@@ -106,31 +105,23 @@ def view_timetable():
     classrooms = [f"Room {i+1}" for i in range(data['num_classrooms'])]
     batches = [f"Batch {i+1}" for i in range(data['num_batches'])]
 
-    # Initialize timetable dict: timetable[day][classroom][slot] = (batch, subject, faculty)
     for day in days:
         timetable[day] = {}
         for room in classrooms:
             timetable[day][room] = [None]*max_classes
 
-    # Simple scheduling algorithm (not optimized):
-    # For each subject, schedule required classes per week across days, classrooms, batches
-    subject_index = 0
     for subj_i, subject in enumerate(data['subjects']):
         classes_needed = data['classes_per_week'][subj_i]
         faculty = data['faculties'][subj_i]
         classes_scheduled = 0
-        day_i = 0
-        room_i = 0
-        batch_i = 0
+        day_i, room_i, batch_i = 0, 0, 0
         while classes_scheduled < classes_needed:
             day = days[day_i % num_days]
             room = classrooms[room_i % len(classrooms)]
             slot_list = timetable[day][room]
-            # Find first empty slot
             try:
                 slot_index = slot_list.index(None)
             except ValueError:
-                # No slot available in this room/day, move to next room/day
                 room_i += 1
                 if room_i >= len(classrooms):
                     room_i = 0
@@ -148,5 +139,112 @@ def view_timetable():
 
     return render_template('view_timetable.html', timetable=timetable, days=days, max_classes=max_classes)
 
+@app.route('/analytics')
+@login_required
+def analytics():
+    data = timetable_data.get(session['username'])
+    if not data:
+        flash("No timetable data found. Please create a timetable first.", "warning")
+        return redirect(url_for('timetable'))
+
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    max_classes = data['max_classes_per_day']
+    classrooms = [f"Room {i+1}" for i in range(data['num_classrooms'])]
+
+    timetable = {}
+    for day in days:
+        timetable[day] = {}
+        for room in classrooms:
+            timetable[day][room] = [None]*max_classes
+
+    for subj_i, subject in enumerate(data['subjects']):
+        classes_needed = data['classes_per_week'][subj_i]
+        faculty = data['faculties'][subj_i]
+        classes_scheduled = 0
+        day_i, room_i, batch_i = 0, 0, 0
+        while classes_scheduled < classes_needed:
+            day = days[day_i % len(days)]
+            room = classrooms[room_i % len(classrooms)]
+            slot_list = timetable[day][room]
+            try:
+                slot_index = slot_list.index(None)
+            except ValueError:
+                room_i += 1
+                if room_i >= len(classrooms):
+                    room_i = 0
+                    day_i += 1
+                continue
+            batch = f"Batch {batch_i+1}"
+            slot_list[slot_index] = (batch, subject, faculty)
+            classes_scheduled += 1
+            batch_i += 1
+            room_i += 1
+            if room_i >= len(classrooms):
+                room_i = 0
+                day_i += 1
+
+    faculty_load = {f: 0 for f in data['faculties']}
+    classroom_load = {room: 0 for room in classrooms}
+    total_slots = len(days) * max_classes
+
+    for day in days:
+        for room in classrooms:
+            for slot in timetable[day][room]:
+                if slot:
+                    batch, subject, faculty = slot
+                    faculty_load[faculty] += 1
+                    classroom_load[room] += 1
+
+    faculties = list(faculty_load.keys())
+    actual_load = list(faculty_load.values())
+    max_capacity = [max_classes * len(days)] * len(faculties)
+
+    classrooms = list(classroom_load.keys())
+    utilization = [
+        round((classroom_load[room] / total_slots) * 100, 2) for room in classrooms
+    ]
+
+    return render_template(
+        "analytics.html",
+        faculties=faculties,
+        actual_load=actual_load,
+        max_capacity=max_capacity,
+        classrooms=classrooms,
+        utilization=utilization
+    )
+
+@app.route('/apply_leave', methods=['GET', 'POST'])
+@login_required
+def apply_leave():
+    faculties = []
+    if session['username'] in timetable_data:
+        faculties = timetable_data[session['username']]['faculties']
+    else:
+        faculties = ["Prof. Sharma", "Prof. Iyer", "Prof. Khan"]
+
+    if request.method == 'POST':
+        faculty = request.form.get('faculty')
+        date = request.form.get('date')
+
+        if faculty and date:
+            faculty_leaves.setdefault(faculty, []).append(date)
+            flash(f"Leave applied for {faculty} on {date}", "success")
+            return redirect(url_for('dashboard'))
+        else:
+            flash("Faculty and date required.", "danger")
+
+    return render_template("apply_leave.html",
+                        faculties=faculties,
+                        faculty_leaves=faculty_leaves)
+
+@app.route('/approvals', methods=['GET', 'POST'])
+@login_required
+def approvals():
+    # For demo: fetch all applied leaves
+    if not faculty_leaves:
+        flash("No leave requests pending approval.", "info")
+    return render_template("approvals.html", faculty_leaves=faculty_leaves)
+
+# ----------------- MAIN -----------------
 if __name__ == '__main__':
     app.run(debug=True)
